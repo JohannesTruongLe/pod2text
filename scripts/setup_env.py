@@ -192,13 +192,13 @@ def load_env_file(path: Path) -> dict[str, str]:
 
 
 def save_env_file(path: Path, env: dict[str, str]) -> None:
-    lines = [f"{key}='{escape_env_value(env[key])}'" for key in sorted(env)]
+    lines = [f"{key}={escape_env_value(env[key])}" for key in sorted(env)]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
 
 
 def escape_env_value(value: str) -> str:
-    return value.replace("'", "'\"'\"'")
+    return value.strip().replace("\n", "")
 
 
 if __name__ == "__main__":

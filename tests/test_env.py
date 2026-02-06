@@ -23,7 +23,12 @@ def test_save_openai_api_key_creates_private_env_file(
     env_path = save_openai_api_key("sk-example")
     assert env_path == Path(".env")
     content = Path(".env").read_text(encoding="utf-8")
-    assert "OPENAI_API_KEY='sk-example'" in content
+    assert "OPENAI_API_KEY=sk-example" in content
 
     mode = stat.S_IMODE(os.stat(".env").st_mode)
     assert mode & 0o077 == 0
+
+
+def test_get_env_value_strips_wrapping_quotes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "'sk-quoted'")
+    assert get_openai_api_key(prompt_if_missing=False) == "sk-quoted"

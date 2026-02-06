@@ -13,16 +13,23 @@ ENV_FILE = Path(".env")
 
 def get_env_value(name: str) -> str:
     load_dotenv()
-    return os.getenv(name, "").strip()
+    raw = os.getenv(name, "").strip()
+    return _strip_wrapping_quotes(raw)
 
 
 def save_env_value(name: str, value: str) -> Path:
     text = value.strip()
     if not text:
         raise ValueError(f"{name} cannot be empty.")
-    set_key(str(ENV_FILE), name, text)
+    set_key(str(ENV_FILE), name, text, quote_mode="never")
     os.chmod(ENV_FILE, 0o600)
     return ENV_FILE
+
+
+def _strip_wrapping_quotes(value: str) -> str:
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1].strip()
+    return value
 
 
 def get_openai_api_key(prompt_if_missing: bool = False) -> str:
