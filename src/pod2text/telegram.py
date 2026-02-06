@@ -57,6 +57,51 @@ def send_text(bot_token: str, chat_id: str, text: str) -> None:
     )
 
 
+def poll_go_commands(
+    bot_token: str,
+    chat_id: str,
+    offset: int | None = None,
+    timeout_seconds: int = 5,
+) -> tuple[bool, int | None]:
+    payload: dict[str, Any] = {
+        "timeout": timeout_seconds,
+        "allowed_updates": ["message"],
+    }
+    if offset is not None:
+        payload["offset"] = offset
+
+    updates = _telegram_call(
+        bot_token,
+        "getUpdates",
+        payload,
+        timeout_seconds=timeout_seconds + 10,
+    )
+    if not isinstance(updates, list):
+        return False, offset
+
+    should_run = False
+    next_offset = offset
+
+    for update in updates:
+        update_id = update.get("update_id")
+        if isinstance(update_id, int):
+            next_offset = update_id + 1
+
+        message = update.get("message")
+        if not isinstance(message, dict):
+            continue
+
+        update_chat_id = str(message.get("chat", {}).get("id", "")).strip()
+        if update_chat_id != chat_id:
+            continue
+
+        text = str(message.get("text", "")).strip().lower()
+        if text.startswith("/go"):
+            should_run = True
+
+    return should_run, next_offset
+
+
 def _telegram_call(
     bot_token: str,
     method: str,

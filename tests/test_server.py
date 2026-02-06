@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from pod2text.podcast import Episode
-from pod2text.server import process_once, run_server
+from pod2text.server import check_go_command_and_run, process_once, run_server
 
 
 def test_process_once_runs_pipeline_for_new_episode(monkeypatch, tmp_path: Path) -> None:
@@ -42,7 +42,7 @@ def test_process_once_runs_pipeline_for_new_episode(monkeypatch, tmp_path: Path)
     assert did_run is True
     assert called == ["run"]
     stored = json.loads(state_file.read_text(encoding="utf-8"))
-    assert stored["https://feed.example.com"] == "ep-1"
+    assert stored["episodes"]["https://feed.example.com"] == "ep-1"
 
 
 def test_process_once_skips_known_episode(monkeypatch, tmp_path: Path) -> None:
@@ -113,3 +113,33 @@ def test_run_server_sends_ready_message_on_start(monkeypatch, tmp_path: Path) ->
 
     assert len(messages) == 1
     assert "ready and setup" in messages[0]
+
+
+def test_check_go_command_triggers_pipeline(monkeypatch, tmp_path: Path) -> None:
+    state_file = tmp_path / "state.json"
+    state_file.write_text(json.dumps({"telegram_update_offset": 10}), encoding="utf-8")
+
+    monkeypatch.setattr("pod2text.server.poll_go_commands", lambda **_: (True, 11))
+    called: list[str] = []
+
+    def fake_run_pipeline(**_: object) -> tuple[Path, Path]:
+        called.append("run")
+        return Path("a"), Path("b")
+
+    monkeypatch.setattr("pod2text.server.run_pipeline", fake_run_pipeline)
+
+    triggered, next_offset = check_go_command_and_run(
+        podcast="Was jetzt",
+        output_dir=tmp_path / "output",
+        transcription_model="small",
+        llm_model="gpt-4o-mini",
+        language="de",
+        state_file=state_file,
+        bot_token="token",
+        chat_id="chat-id",
+        timeout_seconds=1,
+    )
+
+    assert triggered is True
+    assert next_offset == 11
+    assert called == ["run"]

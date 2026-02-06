@@ -58,6 +58,7 @@ uv run pod2text serve --podcast "Was jetzt" --interval-minutes 30
 
 The server stores processed episode IDs in `.pod2text_state.json`.
 When the server starts, it sends a Telegram message that it is ready and setup.
+If you send `/go` in the configured Telegram chat, the pipeline runs immediately.
 
 ## Docker Background Deploy
 
