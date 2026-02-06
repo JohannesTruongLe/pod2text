@@ -9,6 +9,8 @@ dependencies = [
   "feedparser>=6.0.11",
   "requests>=2.32.3",
   "openai-whisper>=20250625",
+  "openai>=1.99.0",
+  "python-dotenv>=1.0.1",
   "typer>=0.16.0",
 ]
 
