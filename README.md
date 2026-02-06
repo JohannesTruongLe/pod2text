@@ -1,6 +1,6 @@
 # pod2text
 
-`pod2text` downloads the latest episode from a podcast feed, transcribes it with Whisper, and summarizes it into digestible chapters using OpenAI.
+`pod2text` downloads the latest episode from a podcast feed, transcribes it with Whisper, summarizes it with OpenAI, and posts the summary to Telegram.
 
 ## Features
 
@@ -8,6 +8,7 @@
 - Download the newest episode audio file from RSS/Atom feeds.
 - Transcribe audio with local Whisper models.
 - Summarize transcripts into chaptered Markdown with an OpenAI model.
+- Automatically post each summary to your Telegram chat.
 - Simple CLI built with `typer`.
 
 ## Requirements
@@ -16,12 +17,14 @@
 - [`uv`](https://docs.astral.sh/uv/)
 - `ffmpeg` installed and available in your `PATH` (required by Whisper)
 - OpenAI API key
+- Telegram bot token and target chat ID
 
 ## Quickstart
 
 ```bash
 uv sync
-uv run pod2text setup-openai-key
+uv run python scripts/setup_env.py
+# alternatively: uv run pod2text setup
 uv run pod2text transcribe --podcast "Was jetzt"
 ```
 
@@ -54,7 +57,8 @@ uv run pytest
 uv run ruff check .
 ```
 
-`setup-openai-key` stores your key in local `.env` as `OPENAI_API_KEY` and applies restrictive file permissions.
+`scripts/setup_env.py` configures `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID`.
+Already configured values are automatically skipped, and setup sends a Telegram test message.
 
 ## Notes
 

@@ -7,8 +7,8 @@ from typing import Annotated
 
 import typer
 
-from pod2text.env import get_openai_api_key, save_openai_api_key
 from pod2text.main import run_pipeline
+from pod2text.setup_wizard import run_setup_wizard
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -41,27 +41,16 @@ def transcribe(
         transcription_model=transcription_model,
         llm_model=llm_model,
         language=language,
-        prompt_for_key=True,
+        prompt_for_key=False,
     )
     typer.echo(f"Downloaded audio: {audio_path}")
     typer.echo(f"Chapter summary: {summary_path}")
+    typer.echo("Summary was posted to Telegram.")
 
 
-@app.command("setup-openai-key")
-def setup_openai_key() -> None:
-    existing = None
-    try:
-        existing = get_openai_api_key(prompt_if_missing=False)
-    except ValueError:
-        existing = None
-
-    if existing:
-        typer.echo("OPENAI_API_KEY is already configured in your environment/.env.")
-        return
-
-    key = typer.prompt("Enter your OpenAI API key", hide_input=True).strip()
-    path = save_openai_api_key(key)
-    typer.echo(f"Saved OPENAI_API_KEY to {path} with restrictive permissions.")
+@app.command("setup")
+def setup() -> None:
+    run_setup_wizard()
 
 
 if __name__ == "__main__":
