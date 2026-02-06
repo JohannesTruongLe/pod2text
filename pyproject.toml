@@ -1,0 +1,40 @@
+[project]
+name = "pod2text"
+version = "0.1.0"
+description = "Download the latest episode from a podcast feed and transcribe it."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "pod2text contributors" }]
+dependencies = [
+  "feedparser>=6.0.11",
+  "requests>=2.32.3",
+  "openai-whisper>=20250625",
+  "typer>=0.16.0",
+]
+
+[project.scripts]
+pod2text = "pod2text.cli:app"
+
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3.4",
+  "ruff>=0.12.8",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
