@@ -42,15 +42,19 @@ def wait_for_chat_connection(bot_token: str, timeout_seconds: int = 60) -> tuple
 def post_summary(bot_token: str, chat_id: str, summary: str) -> None:
     chunks = _chunk_text(summary, max_len=3900)
     for chunk in chunks:
-        _telegram_call(
-            bot_token,
-            "sendMessage",
-            {
-                "chat_id": chat_id,
-                "text": chunk,
-                "disable_web_page_preview": True,
-            },
-        )
+        send_text(bot_token=bot_token, chat_id=chat_id, text=chunk)
+
+
+def send_text(bot_token: str, chat_id: str, text: str) -> None:
+    _telegram_call(
+        bot_token,
+        "sendMessage",
+        {
+            "chat_id": chat_id,
+            "text": text,
+            "disable_web_page_preview": True,
+        },
+    )
 
 
 def _telegram_call(

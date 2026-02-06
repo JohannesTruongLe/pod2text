@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from pod2text.podcast import Episode
-from pod2text.server import process_once
+from pod2text.server import process_once, run_server
 
 
 def test_process_once_runs_pipeline_for_new_episode(monkeypatch, tmp_path: Path) -> None:
@@ -79,3 +79,37 @@ def test_process_once_skips_known_episode(monkeypatch, tmp_path: Path) -> None:
 
     assert did_run is False
     assert called == []
+
+
+def test_run_server_sends_ready_message_on_start(monkeypatch, tmp_path: Path) -> None:
+    messages: list[str] = []
+
+    monkeypatch.setattr("pod2text.server.get_telegram_bot_token", lambda: "token")
+    monkeypatch.setattr("pod2text.server.get_telegram_chat_id", lambda: "chat-id")
+    monkeypatch.setattr(
+        "pod2text.server.send_text",
+        lambda bot_token, chat_id, text: messages.append(f"{bot_token}:{chat_id}:{text}"),
+    )
+    monkeypatch.setattr("pod2text.server.process_once", lambda **_: False)
+
+    def fake_sleep(_: int) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("pod2text.server.time.sleep", fake_sleep)
+
+    try:
+        run_server(
+            podcast="Was jetzt",
+            output_dir=tmp_path / "output",
+            transcription_model="small",
+            llm_model="gpt-4o-mini",
+            language="de",
+            interval_minutes=30,
+            state_file=tmp_path / "state.json",
+            notify_startup=True,
+        )
+    except KeyboardInterrupt:
+        pass
+
+    assert len(messages) == 1
+    assert "ready and setup" in messages[0]

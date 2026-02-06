@@ -6,8 +6,10 @@ import json
 import time
 from pathlib import Path
 
+from pod2text.env import get_telegram_bot_token, get_telegram_chat_id
 from pod2text.main import run_pipeline
 from pod2text.podcast import fetch_latest_episode, resolve_feed_url
+from pod2text.telegram import send_text
 
 
 def run_server(
@@ -18,12 +20,16 @@ def run_server(
     language: str = "de",
     interval_minutes: int = 30,
     state_file: Path = Path(".pod2text_state.json"),
+    notify_startup: bool = True,
 ) -> None:
     if interval_minutes <= 0:
         raise ValueError("interval_minutes must be greater than zero.")
 
     print(f"Starting pod2text server for '{podcast}' with {interval_minutes}-minute polling.")
     print(f"State file: {state_file}")
+    if notify_startup:
+        _send_startup_ready_message(podcast=podcast, interval_minutes=interval_minutes)
+
     while True:
         try:
             did_run = process_once(
@@ -88,3 +94,16 @@ def _load_state(state_file: Path) -> dict[str, str]:
 def _save_state(state_file: Path, state: dict[str, str]) -> None:
     state_file.parent.mkdir(parents=True, exist_ok=True)
     state_file.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _send_startup_ready_message(podcast: str, interval_minutes: int) -> None:
+    text = (
+        "pod2text is ready and setup.\n"
+        f"Watching podcast: {podcast}\n"
+        f"Polling interval: {interval_minutes} minutes"
+    )
+    send_text(
+        bot_token=get_telegram_bot_token(),
+        chat_id=get_telegram_chat_id(),
+        text=text,
+    )

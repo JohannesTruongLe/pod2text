@@ -57,6 +57,23 @@ uv run pod2text serve --podcast "Was jetzt" --interval-minutes 30
 ```
 
 The server stores processed episode IDs in `.pod2text_state.json`.
+When the server starts, it sends a Telegram message that it is ready and setup.
+
+## Docker Background Deploy
+
+One script can run setup, build Docker, and run in background:
+
+```bash
+chmod +x scripts/deploy_docker.sh
+./scripts/deploy_docker.sh
+```
+
+This script:
+
+- Runs `uv run python scripts/setup_env.py` (skips already-configured steps).
+- Builds Docker image `pod2text:latest`.
+- Starts container `pod2text-server` detached.
+- Uses `.env` via `--env-file` and mounts `./output` to persist outputs/state.
 
 ## Development
 
