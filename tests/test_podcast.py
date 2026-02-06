@@ -38,5 +38,6 @@ def test_fetch_latest_episode(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("pod2text.podcast.feedparser.parse", lambda _: Parsed())
 
     episode = fetch_latest_episode("https://example.com/feed.xml")
+    assert episode.identifier == "https://cdn.example.com/ep1.mp3"
     assert episode.title == "Episode 1"
     assert episode.audio_url == "https://cdn.example.com/ep1.mp3"

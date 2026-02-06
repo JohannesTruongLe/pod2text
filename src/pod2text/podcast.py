@@ -12,6 +12,7 @@ from pod2text.catalog import CATALOG
 
 @dataclass(slots=True)
 class Episode:
+    identifier: str
     title: str
     audio_url: str
     published: str | None = None
@@ -42,10 +43,19 @@ def fetch_latest_episode(feed_url: str) -> Episode:
     if not audio_url:
         raise ValueError("Latest episode has no downloadable audio enclosure.")
 
+    identifier = (
+        _read(first, "id")
+        or _read(first, "guid")
+        or _read(first, "link")
+        or audio_url
+    )
+    published = _read(first, "published") or None
+
     return Episode(
-        title=getattr(first, "title", "latest_episode"),
+        identifier=identifier,
+        title=_read(first, "title") or "latest_episode",
         audio_url=audio_url,
-        published=getattr(first, "published", None),
+        published=published,
     )
 
 

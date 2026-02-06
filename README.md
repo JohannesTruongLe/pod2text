@@ -50,6 +50,14 @@ You can also pass a direct RSS URL:
 uv run pod2text transcribe --podcast "https://example.com/feed.xml"
 ```
 
+Run as a server (poll every 30 minutes and run only on new episodes):
+
+```bash
+uv run pod2text serve --podcast "Was jetzt" --interval-minutes 30
+```
+
+The server stores processed episode IDs in `.pod2text_state.json`.
+
 ## Development
 
 ```bash
