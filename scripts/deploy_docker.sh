@@ -7,7 +7,7 @@ PODCAST="${PODCAST:-Was jetzt}"
 INTERVAL_MINUTES="${INTERVAL_MINUTES:-30}"
 
 echo "Step 1/3: Running interactive setup"
-uv run python scripts/setup_env.py
+python3 scripts/setup_env.py
 
 echo "Step 2/3: Building Docker image: ${IMAGE_NAME}"
 docker build -t "${IMAGE_NAME}" .

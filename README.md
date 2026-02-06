@@ -71,10 +71,17 @@ chmod +x scripts/deploy_docker.sh
 
 This script:
 
-- Runs `uv run python scripts/setup_env.py` (skips already-configured steps).
+- Runs `python3 scripts/setup_env.py` (skips already-configured steps).
 - Builds Docker image `pod2text:latest`.
 - Starts container `pod2text-server` detached.
 - Uses `.env` via `--env-file` and mounts `./output` to persist outputs/state.
+
+Host-side dependencies for Docker deploy are minimal:
+
+- `python3` (for setup wizard)
+- `docker`
+
+All runtime app dependencies are installed inside the Docker image.
 
 ## Development
 
