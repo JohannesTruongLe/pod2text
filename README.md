@@ -62,24 +62,26 @@ If you send `/go` in the configured Telegram chat, the pipeline runs immediately
 
 ## Docker Background Deploy
 
-One script can run setup, build Docker, and run in background:
+One command runs setup, Docker build, container replacement, and deploy notifications:
 
 ```bash
-chmod +x scripts/deploy_docker.sh
-./scripts/deploy_docker.sh
+make deploy
 ```
 
-This script:
+`make deploy` calls `scripts/deploy_docker.sh`, which:
 
 - Runs `python3 scripts/setup_env.py` (skips already-configured steps).
-- Builds Docker image `pod2text:latest`.
-- Starts container `pod2text-server` detached.
+- Builds Docker image `pod2text:latest` with BuildKit enabled.
+- Replaces container `pod2text-server` in detached mode.
 - Uses `.env` via `--env-file` and mounts `./output` to persist outputs/state.
+- Prints per-step duration logs and total deploy time.
+- Sends Telegram notification on deploy success/failure (when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are configured in `.env`).
 
 Host-side dependencies for Docker deploy are minimal:
 
 - `python3` (for setup wizard)
 - `docker`
+- `make`
 
 All runtime app dependencies are installed inside the Docker image.
 

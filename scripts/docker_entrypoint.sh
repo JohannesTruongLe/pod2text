@@ -9,7 +9,7 @@ TRANSCRIPTION_MODEL="${TRANSCRIPTION_MODEL:-small}"
 LLM_MODEL="${LLM_MODEL:-gpt-4o-mini}"
 LANGUAGE="${LANGUAGE:-de}"
 
-exec uv run pod2text serve \
+exec /app/.venv/bin/pod2text serve \
   --podcast "$PODCAST" \
   --interval-minutes "$INTERVAL_MINUTES" \
   --output-dir "$OUTPUT_DIR" \
