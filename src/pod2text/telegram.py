@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 import time
 from typing import Any
 
@@ -43,8 +44,21 @@ def wait_for_chat_connection(bot_token: str, timeout_seconds: int = 60) -> tuple
     return None
 
 
-def post_summary(bot_token: str, chat_id: str, summary: str) -> None:
-    chunks = _chunk_text(summary, max_len=3900)
+def post_summary(
+    bot_token: str,
+    chat_id: str,
+    summary: str,
+    episode_title: str | None = None,
+    sent_at: datetime | None = None,
+) -> None:
+    timestamp = sent_at or datetime.now()
+    title = episode_title.strip() if episode_title else "Unknown episode"
+    header = (
+        f"Date: {timestamp.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"Episode: {title}\n\n"
+    )
+    message = f"{header}{summary.strip()}"
+    chunks = _chunk_text(message, max_len=3900)
     for chunk in chunks:
         send_text(bot_token=bot_token, chat_id=chat_id, text=chunk)
 

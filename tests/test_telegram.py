@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 import pytest
@@ -33,6 +34,30 @@ def test_post_summary_splits_large_messages(monkeypatch) -> None:
 
     assert len(sent) > 1
     assert "".join(part.strip() for part in sent)
+
+
+def test_post_summary_includes_timestamp_and_episode_title(monkeypatch) -> None:
+    sent: list[str] = []
+
+    def fake_call(_: str, method: str, payload: dict, timeout_seconds: int = 30):
+        assert method == "sendMessage"
+        _ = timeout_seconds
+        sent.append(payload["text"])
+        return {}
+
+    monkeypatch.setattr("pod2text.telegram._telegram_call", fake_call)
+    post_summary(
+        "token",
+        "123",
+        "Summary body",
+        episode_title="Episode 42: Shipping Faster",
+        sent_at=datetime(2026, 2, 7, 18, 45, 0),
+    )
+
+    assert len(sent) == 1
+    assert "Date: 2026-02-07 18:45:00" in sent[0]
+    assert "Episode: Episode 42: Shipping Faster" in sent[0]
+    assert sent[0].endswith("Summary body")
 
 
 def test_poll_go_commands_filters_chat_and_tracks_offset(monkeypatch) -> None:

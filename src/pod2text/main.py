@@ -33,6 +33,7 @@ def run_pipeline(
         bot_token=get_telegram_bot_token(),
         chat_id=get_telegram_chat_id(),
         summary=summary,
+        episode_title=episode.title,
     )
 
     return audio_path, summary_path
