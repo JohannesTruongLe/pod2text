@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import requests
+
+SEND_RETRY_ATTEMPTS = 3
+SEND_RETRY_COOLDOWN_SECONDS = 2
 
 
 def validate_bot_token(bot_token: str) -> dict[str, Any]:
@@ -46,15 +50,29 @@ def post_summary(bot_token: str, chat_id: str, summary: str) -> None:
 
 
 def send_text(bot_token: str, chat_id: str, text: str) -> None:
-    _telegram_call(
-        bot_token,
-        "sendMessage",
-        {
-            "chat_id": chat_id,
-            "text": text,
-            "disable_web_page_preview": True,
-        },
-    )
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "disable_web_page_preview": True,
+    }
+    last_error: Exception | None = None
+
+    for attempt in range(1, SEND_RETRY_ATTEMPTS + 1):
+        try:
+            _telegram_call(
+                bot_token,
+                "sendMessage",
+                payload,
+            )
+            return
+        except (ConnectionError, RuntimeError) as error:
+            last_error = error
+            if attempt == SEND_RETRY_ATTEMPTS:
+                break
+            time.sleep(SEND_RETRY_COOLDOWN_SECONDS * attempt)
+
+    if last_error is not None:
+        raise last_error
 
 
 def poll_go_commands(
@@ -109,9 +127,21 @@ def _telegram_call(
     timeout_seconds: int = 30,
 ) -> Any:
     url = f"https://api.telegram.org/bot{bot_token}/{method}"
-    response = requests.post(url, json=payload, timeout=timeout_seconds)
+    try:
+        response = requests.post(url, json=payload, timeout=timeout_seconds)
+    except requests.ConnectionError as error:
+        raise ConnectionError(
+            f"Telegram {method} network error: unable to reach api.telegram.org"
+        ) from error
+    except requests.RequestException as error:
+        raise RuntimeError(f"Telegram {method} request failed: {type(error).__name__}") from error
+
     response.raise_for_status()
-    data = response.json()
+    try:
+        data = response.json()
+    except ValueError as error:
+        raise ValueError(f"Telegram {method} returned invalid JSON.") from error
+
     if not data.get("ok"):
         description = data.get("description", "Unknown Telegram API error")
         raise ValueError(f"Telegram {method} failed: {description}")

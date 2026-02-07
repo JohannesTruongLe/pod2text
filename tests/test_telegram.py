@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+import requests
+
 from pod2text.telegram import post_summary, wait_for_chat_connection
 
 
@@ -57,3 +60,62 @@ def test_poll_go_commands_filters_chat_and_tracks_offset(monkeypatch) -> None:
 
     assert should_run is True
     assert next_offset == 10
+
+
+def test_telegram_call_redacts_token_on_connection_error(monkeypatch) -> None:
+    from pod2text.telegram import _telegram_call
+
+    def fail_post(*_: object, **__: object):
+        raise requests.ConnectionError("boom")
+
+    monkeypatch.setattr("pod2text.telegram.requests.post", fail_post)
+
+    with pytest.raises(ConnectionError) as error:
+        _telegram_call("super-secret-token", "getUpdates", {})
+
+    message = str(error.value)
+    assert "network error" in message
+    assert "super-secret-token" not in message
+
+
+def test_send_text_retries_and_succeeds(monkeypatch) -> None:
+    from pod2text.telegram import send_text
+
+    call_count = 0
+    sleeps: list[int] = []
+
+    def fake_call(*_: object, **__: object):
+        nonlocal call_count
+        call_count += 1
+        if call_count < 3:
+            raise ConnectionError("temporary network issue")
+        return {}
+
+    monkeypatch.setattr("pod2text.telegram._telegram_call", fake_call)
+    monkeypatch.setattr("pod2text.telegram.time.sleep", lambda seconds: sleeps.append(seconds))
+
+    send_text("token", "chat-id", "hello")
+
+    assert call_count == 3
+    assert sleeps == [2, 4]
+
+
+def test_send_text_retries_and_raises_after_exhaustion(monkeypatch) -> None:
+    from pod2text.telegram import send_text
+
+    call_count = 0
+    sleeps: list[int] = []
+
+    def fake_call(*_: object, **__: object):
+        nonlocal call_count
+        call_count += 1
+        raise RuntimeError("temporary request error")
+
+    monkeypatch.setattr("pod2text.telegram._telegram_call", fake_call)
+    monkeypatch.setattr("pod2text.telegram.time.sleep", lambda seconds: sleeps.append(seconds))
+
+    with pytest.raises(RuntimeError):
+        send_text("token", "chat-id", "hello")
+
+    assert call_count == 3
+    assert sleeps == [2, 4]
